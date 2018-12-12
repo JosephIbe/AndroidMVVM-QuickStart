@@ -9,11 +9,12 @@ import android.widget.EditText;
 import android.widget.NumberPicker;
 import android.widget.Toast;
 
-public class AddNoteActivity extends AppCompatActivity {
+public class AddEditNoteActivity extends AppCompatActivity {
 
     private EditText titleET, descET;
     private NumberPicker numPicker;
 
+    public static final String EXTRA_ID = "in.sashi.andro_mvvm.EXTRA_ID";
     public static final String EXTRA_TITLE = "in.sashi.andro_mvvm.EXTRA_TITLE";
     public static final String EXTRA_DESC = "in.sashi.andro_mvvm.EXTRA_DESC";
     public static final String EXTRA_PRIORITY = "in.sashi.andro_mvvm.EXTRA_PRIORITY";
@@ -25,7 +26,16 @@ public class AddNoteActivity extends AppCompatActivity {
 
         init();
         getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_close);
-        setTitle("Add New Note");
+
+        Intent intent = getIntent();
+        if (intent.hasExtra(EXTRA_ID)) {
+            setTitle("Edit Note");
+            titleET.setText(intent.getStringExtra(EXTRA_TITLE));
+            descET.setText(intent.getStringExtra(EXTRA_DESC));
+            numPicker.setValue(intent.getIntExtra(EXTRA_PRIORITY, 1));
+        } else {
+            setTitle("Add New Note");
+        }
 
     }
 
@@ -64,10 +74,16 @@ public class AddNoteActivity extends AppCompatActivity {
         } else if (numPicker.getValue() <= 0) {
             Toast.makeText(this, "Please Select Priority", Toast.LENGTH_SHORT).show();
         } else {
-            Intent intent = new Intent(AddNoteActivity.this, MainActivity.class);
+            Intent intent = new Intent(AddEditNoteActivity.this, MainActivity.class);
             intent.putExtra(EXTRA_TITLE, title);
             intent.putExtra(EXTRA_DESC, desc);
             intent.putExtra(EXTRA_PRIORITY, numPicker.getValue());
+
+            int id = getIntent().getIntExtra(EXTRA_ID, -1);
+            if (id != -1){
+                intent.putExtra(EXTRA_ID, id);
+            }
+
             setResult(RESULT_OK, intent);
             finish();
         }

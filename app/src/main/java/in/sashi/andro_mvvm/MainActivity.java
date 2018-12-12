@@ -22,14 +22,18 @@ import in.sashi.andro_mvvm.adapter.NotesAdapter;
 import in.sashi.andro_mvvm.entities.Note;
 import in.sashi.andro_mvvm.viewmodel.NoteViewModel;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NotesAdapter.onNoteItemClickListener {
 
     private NoteViewModel noteViewModel;
     private RecyclerView notesRV;
     private NotesAdapter adapter;
 
     private FloatingActionButton addFAB;
-    private static final int NOTE_REQ_CODE = 101;
+
+    private static final int ADD_NOTE_REQ_CODE = 101;
+    private static final int EDIT_NOTE_REQ_CODE = 202;
+
+    private NotesAdapter.onNoteItemClickListener itemClickListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,10 +56,12 @@ public class MainActivity extends AppCompatActivity {
         addFAB.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, AddNoteActivity.class);
-                startActivityForResult(intent, NOTE_REQ_CODE);
+                Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
+                startActivityForResult(intent, ADD_NOTE_REQ_CODE);
             }
         });
+
+        itemClickListener = (NotesAdapter.onNoteItemClickListener) this;
 
     }
 
@@ -78,6 +84,20 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Note Deleted at Position:\t" + position, Toast.LENGTH_SHORT).show();
             }
         }).attachToRecyclerView(notesRV);
+
+        adapter.setClickListener(this);
+//        adapter.setClickListener(new NotesAdapter.onNoteItemClickListener() {
+//            @Override
+//            public void onNoteClicked(Note note) {
+//                Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
+//                intent.putExtra(AddEditNoteActivity.EXTRA_ID, note.getId());
+//                intent.putExtra(AddEditNoteActivity.EXTRA_TITLE, note.getTitle());
+//                intent.putExtra(AddEditNoteActivity.EXTRA_DESC, note.getDesc());
+//                intent.putExtra(AddEditNoteActivity.EXTRA_PRIORITY, note.getPriority());
+//                startActivityForResult(intent, EDIT_NOTE_REQ_CODE);
+//            }
+//        });
+
     }
 
     @Override
@@ -85,12 +105,28 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
-                case NOTE_REQ_CODE:
-                    Note note = new Note(data.getStringExtra(AddNoteActivity.EXTRA_TITLE),
-                            data.getStringExtra(AddNoteActivity.EXTRA_DESC),
-                            data.getIntExtra(AddNoteActivity.EXTRA_PRIORITY, 0));
+                case ADD_NOTE_REQ_CODE:
+                    Note note = new Note(data.getStringExtra(AddEditNoteActivity.EXTRA_TITLE),
+                            data.getStringExtra(AddEditNoteActivity.EXTRA_DESC),
+                            data.getIntExtra(AddEditNoteActivity.EXTRA_PRIORITY, 0));
                     noteViewModel.addNote(note);
                     Toast.makeText(this, "Note Added", Toast.LENGTH_SHORT).show();
+                    break;
+                case EDIT_NOTE_REQ_CODE:
+                    int note_id = data.getIntExtra(AddEditNoteActivity.EXTRA_ID, -1);
+                    if (note_id == -1){
+                        return;
+                    }
+
+                    Note editedNote = new Note(data.getStringExtra(AddEditNoteActivity.EXTRA_TITLE),
+                            data.getStringExtra(AddEditNoteActivity.EXTRA_DESC),
+                            data.getIntExtra(AddEditNoteActivity.EXTRA_PRIORITY, 0));
+
+                    editedNote.setId(note_id);
+                    noteViewModel.upDateNote(editedNote);
+
+                    Toast.makeText(this, "Note Updated", Toast.LENGTH_SHORT).show();
+
                     break;
             }
         } else {
@@ -113,5 +149,15 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return true;
+    }
+
+    @Override
+    public void onNoteClicked(Note note) {
+        Intent intent = new Intent(MainActivity.this, AddEditNoteActivity.class);
+        intent.putExtra(AddEditNoteActivity.EXTRA_ID, note.getId());
+        intent.putExtra(AddEditNoteActivity.EXTRA_TITLE, note.getTitle());
+        intent.putExtra(AddEditNoteActivity.EXTRA_DESC, note.getDesc());
+        intent.putExtra(AddEditNoteActivity.EXTRA_PRIORITY, note.getPriority());
+        startActivityForResult(intent, EDIT_NOTE_REQ_CODE);
     }
 }
